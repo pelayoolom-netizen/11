@@ -1,0 +1,364 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /test/connection {
+      allow get: if true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isValidBoundedList(arr, maxItems) {
+      return arr is list && arr.size() <= maxItems && (arr.size() == 0 || (arr[0] is string && arr[0].size() >= 1 && arr[0].size() <= 160));
+    }
+
+    function isValidBoundedTextList(arr, maxItems, maxLen) {
+      return arr is list && arr.size() <= maxItems && (arr.size() == 0 || (arr[0] is string && arr[0].size() >= 1 && arr[0].size() <= maxLen));
+    }
+
+    function isValidAxisMap(axes) {
+      return axes is map
+        && axes.keys().hasAll([
+          'economia', 'social', 'libertadEstado', 'territorial',
+          'internacional', 'intervencionismo', 'ecologia', 'seguridad', 'tradicion'
+        ])
+        && axes.keys().hasOnly([
+          'economia', 'social', 'libertadEstado', 'territorial',
+          'internacional', 'intervencionismo', 'ecologia', 'seguridad', 'tradicion'
+        ]);
+    }
+
+    function isValidUserAccount(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'username', 'displayName', 'country', 'availability', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'uid', 'email', 'username', 'displayName', 'photoURL', 'country', 'city', 'bio',
+          'languages', 'favoriteTopics', 'friendUids', 'blockedUids', 'recentOpponents',
+          'availability', 'isPublicProfile', 'showAxesPublicly', 'aiConsentAccepted',
+          'createdAt', 'updatedAt'
+        ])
+        && data.uid is string && data.uid == userId && data.uid == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.username is string && data.username.size() >= 3 && data.username.size() <= 32 && data.username.matches('^[a-zA-Z0-9_]+$')
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512))
+        && data.country is string && data.country.size() >= 2 && data.country.size() <= 64
+        && (!('city' in data) || (data.city is string && data.city.size() <= 64))
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 320))
+        && (!('languages' in data) || isValidBoundedList(data.languages, 6))
+        && (!('favoriteTopics' in data) || isValidBoundedTextList(data.favoriteTopics, 60, 200))
+        && (!('friendUids' in data) || isValidBoundedList(data.friendUids, 100))
+        && (!('blockedUids' in data) || isValidBoundedList(data.blockedUids, 100))
+        && (!('recentOpponents' in data) || isValidBoundedList(data.recentOpponents, 20))
+        && data.availability in ['available', 'studying', 'away']
+        && (!('isPublicProfile' in data) || data.isPublicProfile is bool)
+        && (!('showAxesPublicly' in data) || data.showAxesPublicly is bool)
+        && (!('aiConsentAccepted' in data) || data.aiConsentAccepted is bool)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPublicProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'username', 'displayName', 'country', 'availability', 'elo', 'level', 'debatesCount', 'updatedAt'])
+        && data.keys().hasOnly([
+          'uid', 'username', 'displayName', 'photoURL', 'country', 'city', 'bio',
+          'languages', 'availability', 'elo', 'level', 'debatesCount', 'streak', 'badges',
+          'isPublicProfile', 'showAxesPublicly', 'publicAxesSummary', 'updatedAt'
+        ])
+        && data.uid is string && data.uid == userId && data.uid == request.auth.uid
+        && data.username is string && data.username.size() >= 3 && data.username.size() <= 32 && data.username.matches('^[a-zA-Z0-9_]+$')
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512))
+        && data.country is string && data.country.size() >= 2 && data.country.size() <= 64
+        && (!('city' in data) || (data.city is string && data.city.size() <= 64))
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 320))
+        && (!('languages' in data) || isValidBoundedList(data.languages, 6))
+        && data.availability in ['available', 'studying', 'away']
+        && (data.elo is int || data.elo is float) && data.elo >= 100 && data.elo <= 4000
+        && data.level is string && data.level.size() >= 2 && data.level.size() <= 40
+        && (data.debatesCount is int || data.debatesCount is float) && data.debatesCount >= 0 && data.debatesCount <= 10000
+        && (!('streak' in data) || ((data.streak is int || data.streak is float) && data.streak >= 0 && data.streak <= 1000))
+        && (!('badges' in data) || isValidBoundedList(data.badges, 20))
+        && (!('isPublicProfile' in data) || data.isPublicProfile is bool)
+        && (!('showAxesPublicly' in data) || data.showAxesPublicly is bool)
+        && (!('publicAxesSummary' in data) || (data.publicAxesSummary is string && data.publicAxesSummary.size() <= 240))
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTestProgress(data, userId) {
+      return data.keys().hasAll(['uid', 'mode', 'currentIndex', 'answersJson', 'completed', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'mode', 'currentIndex', 'answersJson', 'priorityAreas', 'completed', 'updatedAt'])
+        && data.uid is string && data.uid == userId && data.uid == request.auth.uid
+        && data.mode in ['rapido', 'completo', 'avanzado']
+        && (data.currentIndex is int || data.currentIndex is float) && data.currentIndex >= 0 && data.currentIndex <= 200
+        && data.answersJson is string && data.answersJson.size() <= 12000
+        && (!('priorityAreas' in data) || isValidBoundedList(data.priorityAreas, 10))
+        && data.completed is bool
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidIdeologicalProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'modeCompleted', 'answeredCount', 'axes', 'summaryText', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'modeCompleted', 'answeredCount', 'axes', 'convictions', 'tensions', 'moderateTopics', 'summaryText', 'updatedAt'])
+        && data.uid is string && data.uid == userId && data.uid == request.auth.uid
+        && data.modeCompleted in ['rapido', 'completo', 'avanzado']
+        && (data.answeredCount is int || data.answeredCount is float) && data.answeredCount >= 1 && data.answeredCount <= 150
+        && isValidAxisMap(data.axes)
+        && (!('convictions' in data) || isValidBoundedTextList(data.convictions, 10, 200))
+        && (!('tensions' in data) || isValidBoundedTextList(data.tensions, 10, 320))
+        && (!('moderateTopics' in data) || isValidBoundedTextList(data.moderateTopics, 10, 200))
+        && data.summaryText is string && data.summaryText.size() >= 1 && data.summaryText.size() <= 600
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMatchmakingEntry(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'country', 'topic', 'matchStyle', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'country', 'topic', 'matchStyle', 'status', 'debateId', 'matchedWithUid', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid == userId && isValidId(data.uid)
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80
+        && data.country is string && data.country.size() >= 2 && data.country.size() <= 64
+        && data.topic is string && data.topic.size() >= 2 && data.topic.size() <= 160
+        && data.matchStyle in ['moderado', 'maxima_discrepancia']
+        && data.status in ['waiting', 'matched']
+        && (!('debateId' in data) || (data.debateId is string && isValidId(data.debateId)))
+        && (!('matchedWithUid' in data) || (data.matchedWithUid is string && isValidId(data.matchedWithUid)))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDebateSession(data, debateId) {
+      return data.keys().hasAll(['debateId', 'roomName', 'topic', 'status', 'participantIds', 'hostUid', 'hostName', 'hostCountry', 'durationSeconds', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'debateId', 'roomName', 'inviteCode', 'topic', 'format', 'durationLimitMinutes',
+          'isRanked', 'allowSpectators', 'status', 'participantIds', 'hostUid', 'guestUid',
+          'hostName', 'guestName', 'hostCountry', 'guestCountry', 'discrepancyTopics',
+          'durationSeconds', 'transcriptNotes', 'aiReportJson', 'reflectionHost', 'reflectionGuest',
+          'createdAt', 'updatedAt'
+        ])
+        && data.debateId is string && data.debateId == debateId && isValidId(data.debateId)
+        && data.roomName is string && isValidId(data.roomName)
+        && (!('inviteCode' in data) || (data.inviteCode is string && data.inviteCode.size() <= 24))
+        && data.topic is string && data.topic.size() >= 2 && data.topic.size() <= 160
+        && (!('format' in data) || data.format in ['libre', 'guiado'])
+        && (!('durationLimitMinutes' in data) || ((data.durationLimitMinutes is int || data.durationLimitMinutes is float) && data.durationLimitMinutes >= 5 && data.durationLimitMinutes <= 60))
+        && (!('isRanked' in data) || data.isRanked is bool)
+        && (!('allowSpectators' in data) || data.allowSpectators is bool)
+        && data.status in ['ready', 'active', 'completed', 'cancelled']
+        && data.participantIds is list && data.participantIds.size() >= 1 && data.participantIds.size() <= 2
+        && data.participantIds[0] is string && isValidId(data.participantIds[0])
+        && data.hostUid is string && isValidId(data.hostUid) && data.hostUid in data.participantIds
+        && (!('guestUid' in data) || (data.guestUid is string && data.guestUid.size() <= 128))
+        && data.hostName is string && data.hostName.size() >= 1 && data.hostName.size() <= 80
+        && (!('guestName' in data) || (data.guestName is string && data.guestName.size() <= 80))
+        && data.hostCountry is string && data.hostCountry.size() >= 2 && data.hostCountry.size() <= 64
+        && (!('guestCountry' in data) || (data.guestCountry is string && data.guestCountry.size() <= 64))
+        && (!('discrepancyTopics' in data) || isValidBoundedTextList(data.discrepancyTopics, 5, 200))
+        && (data.durationSeconds is int || data.durationSeconds is float) && data.durationSeconds >= 0 && data.durationSeconds <= 86400
+        && (!('transcriptNotes' in data) || (data.transcriptNotes is string && data.transcriptNotes.size() <= 6000))
+        && (!('aiReportJson' in data) || (data.aiReportJson is string && data.aiReportJson.size() <= 8000))
+        && (!('reflectionHost' in data) || (data.reflectionHost is string && data.reflectionHost.size() <= 500))
+        && (!('reflectionGuest' in data) || (data.reflectionGuest is string && data.reflectionGuest.size() <= 500))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidGroupRoom(data, roomId) {
+      return data.keys().hasAll([
+          'roomId', 'inviteCode', 'topic', 'teamSize', 'durationMinutes',
+          'hostUid', 'hostName', 'status', 'allowSpectators', 'isPrivate',
+          'teamA', 'teamB', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'roomId', 'inviteCode', 'topic', 'teamSize', 'durationMinutes',
+          'hostUid', 'hostName', 'status', 'allowSpectators', 'isPrivate',
+          'teamA', 'teamB', 'speakerQueue', 'activeSpeakerUid', 'createdAt', 'updatedAt'
+        ])
+        && data.roomId is string && data.roomId == roomId && isValidId(data.roomId)
+        && data.inviteCode is string && data.inviteCode.size() >= 4 && data.inviteCode.size() <= 24
+        && data.topic is string && data.topic.size() >= 2 && data.topic.size() <= 160
+        && (data.teamSize is int || data.teamSize is float) && data.teamSize >= 1 && data.teamSize <= 7
+        && (data.durationMinutes is int || data.durationMinutes is float) && data.durationMinutes >= 5 && data.durationMinutes <= 60
+        && data.hostUid is string && isValidId(data.hostUid)
+        && data.hostName is string && data.hostName.size() >= 1 && data.hostName.size() <= 80
+        && data.status in ['open', 'active', 'completed']
+        && data.allowSpectators is bool
+        && data.isPrivate is bool
+        && data.teamA is list && data.teamA.size() <= 7
+        && data.teamB is list && data.teamB.size() <= 7
+        && (!('speakerQueue' in data) || (data.speakerQueue is list && data.speakerQueue.size() <= 14))
+        && (!('activeSpeakerUid' in data) || (data.activeSpeakerUid is string && data.activeSpeakerUid.size() <= 128))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId) && isOwner(userId) && isValidUserAccount(incoming(), userId) && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isOwner(userId) && isValidUserAccount(incoming(), userId) && (!('uid' in existing()) || incoming().uid == existing().uid) && (!('createdAt' in existing()) || incoming().createdAt == existing().createdAt) && incoming().updatedAt == request.time;
+      allow delete: if isValidId(userId) && isOwner(userId);
+    }
+
+    match /public_profiles/{userId} {
+      allow get: if isValidId(userId) && isVerified();
+      allow list: if isVerified() && (resource.data.isPublicProfile == true || resource.data.uid == request.auth.uid);
+      allow create: if isValidId(userId) && isOwner(userId) && isValidPublicProfile(incoming(), userId) && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isOwner(userId) && isValidPublicProfile(incoming(), userId) && incoming().uid == existing().uid && incoming().updatedAt == request.time;
+      allow delete: if isValidId(userId) && isOwner(userId);
+    }
+
+    match /test_progress/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create, update: if isValidId(userId) && isOwner(userId) && isValidTestProgress(incoming(), userId) && incoming().updatedAt == request.time;
+      allow delete: if isValidId(userId) && isOwner(userId);
+    }
+
+    match /ideological_profiles/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create, update: if isValidId(userId) && isOwner(userId) && isValidIdeologicalProfile(incoming(), userId) && incoming().updatedAt == request.time;
+      allow delete: if isValidId(userId) && isOwner(userId);
+    }
+
+    match /matchmaking_queue/{userId} {
+      allow get: if isValidId(userId) && isVerified() && (request.auth.uid == userId || resource.data.status == 'waiting');
+      allow list: if isVerified() && (resource.data.uid == request.auth.uid || resource.data.status == 'waiting');
+      allow create: if isValidId(userId) && isOwner(userId) && isValidMatchmakingEntry(incoming(), userId) && incoming().status == 'waiting' && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isVerified() && isValidMatchmakingEntry(incoming(), userId) && incoming().uid == existing().uid && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(userId) && isOwner(userId);
+    }
+
+    match /debates/{debateId} {
+      allow get: if isValidId(debateId) && isVerified() && (request.auth.uid in resource.data.participantIds || resource.data.allowSpectators == true || ('inviteCode' in resource.data && resource.data.inviteCode != ''));
+      allow list: if isVerified() && (request.auth.uid in resource.data.participantIds || resource.data.allowSpectators == true);
+      allow create: if isValidId(debateId) && isVerified() && isValidDebateSession(incoming(), debateId) && request.auth.uid in incoming().participantIds && incoming().status in ['ready', 'active'] && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(debateId) && isVerified() && isValidDebateSession(incoming(), debateId) && incoming().debateId == existing().debateId && incoming().roomName == existing().roomName && incoming().hostUid == existing().hostUid && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time && (
+        request.auth.uid in existing().participantIds
+        || (existing().participantIds.size() == 1 && incoming().participantIds.size() == 2 && request.auth.uid in incoming().participantIds)
+      );
+      allow delete: if isValidId(debateId) && isVerified() && existing().hostUid == request.auth.uid;
+    }
+
+    match /group_rooms/{roomId} {
+      allow get: if isValidId(roomId) && isVerified();
+      allow list: if isVerified() && (resource.data.isPrivate == false || resource.data.allowSpectators == true || resource.data.hostUid == request.auth.uid);
+      allow create: if isValidId(roomId) && isVerified() && isValidGroupRoom(incoming(), roomId) && incoming().hostUid == request.auth.uid && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(roomId) && isVerified() && isValidGroupRoom(incoming(), roomId) && incoming().roomId == existing().roomId && incoming().hostUid == existing().hostUid && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(roomId) && isVerified() && existing().hostUid == request.auth.uid;
+    }
+
+    match /friend_requests/{requestId} {
+      allow get: if isValidId(requestId) && isVerified() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow list: if isVerified() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow create: if isValidId(requestId) && isVerified()
+        && incoming().keys().hasAll(['requestId', 'fromUid', 'fromName', 'fromUsername', 'toUid', 'status', 'createdAt', 'updatedAt'])
+        && incoming().keys().hasOnly(['requestId', 'fromUid', 'fromName', 'fromUsername', 'toUid', 'status', 'createdAt', 'updatedAt'])
+        && incoming().requestId == requestId
+        && incoming().fromUid == request.auth.uid
+        && incoming().toUid != request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(requestId) && isVerified()
+        && existing().toUid == request.auth.uid
+        && incoming().fromUid == existing().fromUid
+        && incoming().toUid == existing().toUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().status in ['accepted', 'declined']
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if isValidId(requestId) && isVerified() && (existing().fromUid == request.auth.uid || existing().toUid == request.auth.uid);
+    }
+
+    match /scheduled_debates/{eventId} {
+      allow get: if isValidId(eventId) && isVerified() && resource.data.ownerUid == request.auth.uid;
+      allow list: if isVerified() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isValidId(eventId) && isVerified()
+        && incoming().keys().hasAll(['eventId', 'ownerUid', 'title', 'topic', 'scheduledFor', 'format', 'durationMinutes', 'createdAt'])
+        && incoming().keys().hasOnly(['eventId', 'ownerUid', 'title', 'topic', 'scheduledFor', 'format', 'durationMinutes', 'inviteCode', 'createdAt'])
+        && incoming().eventId == eventId
+        && incoming().ownerUid == request.auth.uid
+        && incoming().title is string && incoming().title.size() >= 2 && incoming().title.size() <= 140
+        && incoming().topic is string && incoming().topic.size() >= 2 && incoming().topic.size() <= 160
+        && incoming().scheduledFor is string && incoming().scheduledFor.size() >= 10 && incoming().scheduledFor.size() <= 40
+        && incoming().format in ['1v1', 'grupo', 'privada']
+        && (incoming().durationMinutes is int || incoming().durationMinutes is float)
+        && incoming().createdAt == request.time;
+      allow delete: if isValidId(eventId) && isVerified() && existing().ownerUid == request.auth.uid;
+    }
+
+    match /notifications/{notifId} {
+      allow get: if isValidId(notifId) && isVerified() && resource.data.recipientUid == request.auth.uid;
+      allow list: if isVerified() && resource.data.recipientUid == request.auth.uid;
+      allow create: if isValidId(notifId) && isVerified()
+        && incoming().keys().hasAll(['notifId', 'recipientUid', 'title', 'body', 'kind', 'read', 'createdAt'])
+        && incoming().keys().hasOnly(['notifId', 'recipientUid', 'title', 'body', 'kind', 'read', 'createdAt'])
+        && incoming().notifId == notifId
+        && isValidId(incoming().recipientUid)
+        && incoming().title is string && incoming().title.size() <= 120
+        && incoming().body is string && incoming().body.size() <= 320
+        && incoming().kind in ['friend', 'invite', 'report', 'system']
+        && incoming().read == false
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(notifId) && isVerified()
+        && existing().recipientUid == request.auth.uid
+        && incoming().diff(existing()).affectedKeys().hasOnly(['read'])
+        && incoming().read is bool;
+      allow delete: if isValidId(notifId) && isVerified() && existing().recipientUid == request.auth.uid;
+    }
+
+    match /proposed_topics/{topicId} {
+      allow get: if isValidId(topicId) && isVerified();
+      allow list: if isVerified() && (resource.data.authorUid == request.auth.uid || resource.data.status == 'approved');
+      allow create: if isValidId(topicId) && isVerified()
+        && incoming().keys().hasAll(['topicId', 'authorUid', 'authorName', 'title', 'description', 'category', 'difficulty', 'status', 'createdAt'])
+        && incoming().keys().hasOnly(['topicId', 'authorUid', 'authorName', 'title', 'description', 'category', 'difficulty', 'status', 'createdAt'])
+        && incoming().topicId == topicId
+        && incoming().authorUid == request.auth.uid
+        && incoming().title is string && incoming().title.size() >= 5 && incoming().title.size() <= 160
+        && incoming().description is string && incoming().description.size() >= 10 && incoming().description.size() <= 400
+        && incoming().status == 'pending_moderation'
+        && incoming().createdAt == request.time;
+      allow delete: if isValidId(topicId) && isVerified() && existing().authorUid == request.auth.uid;
+    }
+
+    match /reports/{reportId} {
+      allow get: if isValidId(reportId) && isVerified() && resource.data.reporterUid == request.auth.uid;
+      allow list: if isVerified() && resource.data.reporterUid == request.auth.uid;
+      allow create: if isValidId(reportId) && isVerified()
+        && incoming().keys().hasAll(['reportId', 'reporterUid', 'targetUid', 'reason', 'createdAt'])
+        && incoming().keys().hasOnly(['reportId', 'reporterUid', 'targetUid', 'reason', 'details', 'createdAt'])
+        && incoming().reportId == reportId
+        && incoming().reporterUid == request.auth.uid
+        && incoming().targetUid != request.auth.uid
+        && incoming().reason is string && incoming().reason.size() >= 3 && incoming().reason.size() <= 120
+        && (!('details' in incoming()) || (incoming().details is string && incoming().details.size() <= 500))
+        && incoming().createdAt == request.time;
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "ANTIRRATHETO",
+  "description": "Distintas opiniones. Un solo mundo. Plataforma avanzada de debate político en español con test ideológico multidimensional, emparejamiento inteligente, videodebates reales y juez de IA.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

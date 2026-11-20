@@ -1,0 +1,292 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Cuenta privada del usuario con preferencias, favoritos, amigos y bloqueos.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "username": { "type": "string", "minLength": 3, "maxLength": 32, "pattern": "^[a-zA-Z0-9_]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "country": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "city": { "type": "string", "maxLength": 64 },
+        "bio": { "type": "string", "maxLength": 320 },
+        "languages": { "type": "array" },
+        "favoriteTopics": { "type": "array" },
+        "friendUids": { "type": "array" },
+        "blockedUids": { "type": "array" },
+        "recentOpponents": { "type": "array" },
+        "availability": { "type": "string", "enum": ["available", "studying", "away"] },
+        "isPublicProfile": { "type": "boolean" },
+        "showAxesPublicly": { "type": "boolean" },
+        "aiConsentAccepted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "username", "displayName", "country", "availability", "createdAt", "updatedAt"]
+    },
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Perfil público sin PII ni respuestas privadas del test; muestra reputación ELO y campos autorizados.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "username": { "type": "string", "minLength": 3, "maxLength": 32, "pattern": "^[a-zA-Z0-9_]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "country": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "city": { "type": "string", "maxLength": 64 },
+        "bio": { "type": "string", "maxLength": 320 },
+        "languages": { "type": "array" },
+        "availability": { "type": "string", "enum": ["available", "studying", "away"] },
+        "elo": { "type": "number" },
+        "level": { "type": "string", "maxLength": 40 },
+        "debatesCount": { "type": "number" },
+        "streak": { "type": "number" },
+        "badges": { "type": "array" },
+        "isPublicProfile": { "type": "boolean" },
+        "showAxesPublicly": { "type": "boolean" },
+        "publicAxesSummary": { "type": "string", "maxLength": 240 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "username", "displayName", "country", "availability", "elo", "level", "debatesCount", "updatedAt"]
+    },
+    "TestProgress": {
+      "title": "TestProgress",
+      "description": "Progreso guardado y respuestas privadas del test ideológico de un usuario.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "mode": { "type": "string", "enum": ["rapido", "completo", "avanzado"] },
+        "currentIndex": { "type": "number" },
+        "answersJson": { "type": "string", "maxLength": 12000 },
+        "priorityAreas": { "type": "array" },
+        "completed": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "mode", "currentIndex", "answersJson", "completed", "updatedAt"]
+    },
+    "IdeologicalProfile": {
+      "title": "IdeologicalProfile",
+      "description": "Perfil ideológico privado de 9 ejes, convicciones, tensiones y temas moderados.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "modeCompleted": { "type": "string", "enum": ["rapido", "completo", "avanzado"] },
+        "answeredCount": { "type": "number" },
+        "axes": { "type": "object" },
+        "convictions": { "type": "array" },
+        "tensions": { "type": "array" },
+        "moderateTopics": { "type": "array" },
+        "summaryText": { "type": "string", "maxLength": 600 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "modeCompleted", "answeredCount", "axes", "summaryText", "updatedAt"]
+    },
+    "MatchmakingEntry": {
+      "title": "MatchmakingEntry",
+      "description": "Entrada en cola de emparejamiento inteligente.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "country": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "topic": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "matchStyle": { "type": "string", "enum": ["moderado", "maxima_discrepancia"] },
+        "status": { "type": "string", "enum": ["waiting", "matched"] },
+        "debateId": { "type": "string", "maxLength": 128 },
+        "matchedWithUid": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "country", "topic", "matchStyle", "status", "createdAt", "updatedAt"]
+    },
+    "DebateSession": {
+      "title": "DebateSession",
+      "description": "Sesión de debate real 1v1 o privada con estructura guiada, Juez IA y variaciones ELO.",
+      "type": "object",
+      "properties": {
+        "debateId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "roomName": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "inviteCode": { "type": "string", "maxLength": 24 },
+        "topic": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "format": { "type": "string", "enum": ["libre", "guiado"] },
+        "durationLimitMinutes": { "type": "number" },
+        "isRanked": { "type": "boolean" },
+        "allowSpectators": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["ready", "active", "completed", "cancelled"] },
+        "participantIds": { "type": "array" },
+        "hostUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "guestUid": { "type": "string", "maxLength": 128 },
+        "hostName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "guestName": { "type": "string", "maxLength": 80 },
+        "hostCountry": { "type": "string", "minLength": 2, "maxLength": 64 },
+        "guestCountry": { "type": "string", "maxLength": 64 },
+        "discrepancyTopics": { "type": "array" },
+        "durationSeconds": { "type": "number" },
+        "transcriptNotes": { "type": "string", "maxLength": 6000 },
+        "aiReportJson": { "type": "string", "maxLength": 8000 },
+        "reflectionHost": { "type": "string", "maxLength": 500 },
+        "reflectionGuest": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["debateId", "roomName", "topic", "status", "participantIds", "hostUid", "hostName", "hostCountry", "durationSeconds", "createdAt", "updatedAt"]
+    },
+    "GroupDebateRoom": {
+      "title": "GroupDebateRoom",
+      "description": "Sala de debate en grupo (2v2 hasta 7v7) con equipos, cola de palabra y espectadores opcionales.",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "inviteCode": { "type": "string", "minLength": 4, "maxLength": 24 },
+        "topic": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "teamSize": { "type": "number" },
+        "durationMinutes": { "type": "number" },
+        "hostUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "hostName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "status": { "type": "string", "enum": ["open", "active", "completed"] },
+        "allowSpectators": { "type": "boolean" },
+        "isPrivate": { "type": "boolean" },
+        "teamA": { "type": "array" },
+        "teamB": { "type": "array" },
+        "speakerQueue": { "type": "array" },
+        "activeSpeakerUid": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["roomId", "inviteCode", "topic", "teamSize", "durationMinutes", "hostUid", "hostName", "status", "allowSpectators", "isPrivate", "teamA", "teamB", "createdAt", "updatedAt"]
+    },
+    "FriendRequest": {
+      "title": "FriendRequest",
+      "description": "Solicitud de amistad entre dos usuarios.",
+      "type": "object",
+      "properties": {
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "fromUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "fromName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "fromUsername": { "type": "string", "minLength": 3, "maxLength": 32 },
+        "toUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["requestId", "fromUid", "fromName", "fromUsername", "toUid", "status", "createdAt", "updatedAt"]
+    },
+    "ScheduledDebate": {
+      "title": "ScheduledDebate",
+      "description": "Debate programado en el calendario del usuario.",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "topic": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "scheduledFor": { "type": "string", "minLength": 10, "maxLength": 40 },
+        "format": { "type": "string", "enum": ["1v1", "grupo", "privada"] },
+        "durationMinutes": { "type": "number" },
+        "inviteCode": { "type": "string", "maxLength": 24 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["eventId", "ownerUid", "title", "topic", "scheduledFor", "format", "durationMinutes", "createdAt"]
+    },
+    "UserNotification": {
+      "title": "UserNotification",
+      "description": "Notificación dirigida a un usuario.",
+      "type": "object",
+      "properties": {
+        "notifId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "recipientUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "body": { "type": "string", "minLength": 1, "maxLength": 320 },
+        "kind": { "type": "string", "enum": ["friend", "invite", "report", "system"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["notifId", "recipientUid", "title", "body", "kind", "read", "createdAt"]
+    },
+    "ProposedTopic": {
+      "title": "ProposedTopic",
+      "description": "Propuesta comunitaria de nuevo tema de debate sujeta a moderación.",
+      "type": "object",
+      "properties": {
+        "topicId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "authorName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "title": { "type": "string", "minLength": 5, "maxLength": 160 },
+        "description": { "type": "string", "minLength": 10, "maxLength": 400 },
+        "category": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "difficulty": { "type": "string", "enum": ["Básico", "Intermedio", "Avanzado"] },
+        "status": { "type": "string", "enum": ["pending_moderation", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["topicId", "authorUid", "authorName", "title", "description", "category", "difficulty", "status", "createdAt"]
+    },
+    "ModerationReport": {
+      "title": "ModerationReport",
+      "description": "Denuncia de convivencia enviada por un usuario.",
+      "type": "object",
+      "properties": {
+        "reportId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reporterUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "targetUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "reason": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "details": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reportId", "reporterUid", "targetUid", "reason", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "Cuentas privadas de usuario."
+    },
+    "/public_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Perfiles públicos sin PII para búsqueda, amigos y clasificación."
+    },
+    "/test_progress/{userId}": {
+      "schema": { "$ref": "#/entities/TestProgress" },
+      "description": "Progreso y respuestas privadas del test ideológico."
+    },
+    "/ideological_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/IdeologicalProfile" },
+      "description": "Perfil ideológico privado de 9 ejes."
+    },
+    "/matchmaking_queue/{userId}": {
+      "schema": { "$ref": "#/entities/MatchmakingEntry" },
+      "description": "Cola de emparejamiento en tiempo real."
+    },
+    "/debates/{debateId}": {
+      "schema": { "$ref": "#/entities/DebateSession" },
+      "description": "Sesiones de debate 1v1 y salas privadas."
+    },
+    "/group_rooms/{roomId}": {
+      "schema": { "$ref": "#/entities/GroupDebateRoom" },
+      "description": "Salas de debate en grupo (2v2 hasta 7v7)."
+    },
+    "/friend_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/FriendRequest" },
+      "description": "Solicitudes de amistad."
+    },
+    "/scheduled_debates/{eventId}": {
+      "schema": { "$ref": "#/entities/ScheduledDebate" },
+      "description": "Eventos del calendario personal de debates."
+    },
+    "/notifications/{notifId}": {
+      "schema": { "$ref": "#/entities/UserNotification" },
+      "description": "Notificaciones privadas de cada usuario."
+    },
+    "/proposed_topics/{topicId}": {
+      "schema": { "$ref": "#/entities/ProposedTopic" },
+      "description": "Temas propuestos por usuarios pendientes de moderación."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/ModerationReport" },
+      "description": "Denuncias de conducta enviadas para moderación."
+    }
+  }
+}
