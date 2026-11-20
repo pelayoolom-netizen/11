@@ -24,8 +24,13 @@ export function AuthScreen({ mode, onSwitchMode, onBackToLanding }: AuthScreenPr
       const code = (err as { code?: string })?.code;
       if (code === 'auth/popup-closed-by-user') {
         setError('Has cerrado la ventana antes de completar la autenticación.');
+      } else if (code === 'auth/popup-blocked') {
+        setError('Tu navegador ha bloqueado la ventana emergente de Google. Permite las ventanas emergentes e inténtalo de nuevo.');
       } else if (code === 'auth/unauthorized-domain') {
-        setError('Este dominio no está autorizado en la configuración de Firebase Authentication.');
+        const host = typeof window !== 'undefined' ? window.location.hostname : '';
+        setError(
+          `El dominio actual (${host}) no está autorizado en Firebase Authentication. Añádelo en Authentication > Settings > Authorized domains en Firebase Console.`
+        );
       } else {
         setError('No se pudo completar el acceso con Google. Inténtalo de nuevo.');
       }
